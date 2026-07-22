@@ -7,13 +7,19 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
+const DefaultBaseURL = "https://data.doover.com"
+
 type PluginSettings struct {
-	Path    string                `json:"path"`
-	Secrets *SecretPluginSettings `json:"-"`
+	BaseURL string `json:"baseUrl"`
+	// OrgID is a Doover organisation snowflake ID. Kept as a string because
+	// snowflakes exceed JavaScript's safe-integer range.
+	OrgID    string                `json:"orgId"`
+	ClientID string                `json:"clientId"`
+	Secrets  *SecretPluginSettings `json:"-"`
 }
 
 type SecretPluginSettings struct {
-	ApiKey string `json:"apiKey"`
+	ClientSecret string `json:"clientSecret"`
 }
 
 func LoadPluginSettings(source backend.DataSourceInstanceSettings) (*PluginSettings, error) {
@@ -22,14 +28,11 @@ func LoadPluginSettings(source backend.DataSourceInstanceSettings) (*PluginSetti
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal PluginSettings json: %w", err)
 	}
-
-	settings.Secrets = loadSecretPluginSettings(source.DecryptedSecureJSONData)
-
-	return &settings, nil
-}
-
-func loadSecretPluginSettings(source map[string]string) *SecretPluginSettings {
-	return &SecretPluginSettings{
-		ApiKey: source["apiKey"],
+	if settings.BaseURL == "" {
+		settings.BaseURL = DefaultBaseURL
 	}
+	settings.Secrets = &SecretPluginSettings{
+		ClientSecret: source.DecryptedSecureJSONData["clientSecret"],
+	}
+	return &settings, nil
 }

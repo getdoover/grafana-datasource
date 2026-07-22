@@ -3,3 +3,14 @@ services:
     extends:
       file: .config/docker-compose-base.yaml
       service: grafana
+    # Host ports 3000/3001 are occupied by the local doover-data proxies;
+    # serve the dev Grafana on 3005 instead.
+    ports: !override
+      - 3005:3000/tcp
+      - 2345:2345/tcp # delve
+    environment:
+      # Doover staging credentials for the provisioned dev datasource
+      # (referenced from provisioning/datasources/datasources.yml).
+      DOOVER_ORG_ID: ${DOOVER_ORG_ID:-}
+      DOOVER_CLIENT_ID: ${DOOVER_CLIENT_ID:-}
+      DOOVER_CLIENT_SECRET: ${DOOVER_CLIENT_SECRET:-}

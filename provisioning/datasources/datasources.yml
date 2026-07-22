@@ -1,14 +1,18 @@
 apiVersion: 1
 
+# Dev datasource pointing at Doover staging. Export these before `docker compose up`:
+#   DOOVER_ORG_ID, DOOVER_CLIENT_ID, DOOVER_CLIENT_SECRET
 datasources:
   - name: 'doover'
     type: 'getdoover-doover-datasource'
     access: proxy
-    isDefault: false
+    isDefault: true
     orgId: 1
     version: 1
     editable: true
     jsonData:
-      path: '/resources'
+      baseUrl: 'https://data.staging.udoover.com'
+      orgId: '$DOOVER_ORG_ID'
+      clientId: '$DOOVER_CLIENT_ID'
     secureJsonData:
-      apiKey: 'api-key'
+      clientSecret: '$DOOVER_CLIENT_SECRET'

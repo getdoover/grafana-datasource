@@ -9,61 +9,89 @@ export function ConfigEditor(props: Props) {
   const { onOptionsChange, options } = props;
   const { jsonData, secureJsonFields, secureJsonData } = options;
 
-  const onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onJsonDataChange = (key: keyof MyDataSourceOptions) => (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       jsonData: {
         ...jsonData,
-        path: event.target.value,
+        [key]: event.target.value,
       },
     });
   };
 
   // Secure field (only sent to the backend)
-  const onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onClientSecretChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       secureJsonData: {
-        apiKey: event.target.value,
+        clientSecret: event.target.value,
       },
     });
   };
 
-  const onResetAPIKey = () => {
+  const onResetClientSecret = () => {
     onOptionsChange({
       ...options,
       secureJsonFields: {
         ...options.secureJsonFields,
-        apiKey: false,
+        clientSecret: false,
       },
       secureJsonData: {
         ...options.secureJsonData,
-        apiKey: '',
+        clientSecret: '',
       },
     });
   };
 
   return (
     <>
-      <InlineField label="Path" labelWidth={14} interactive tooltip={'Json field returned to frontend'}>
+      <InlineField
+        label="Base URL"
+        labelWidth={20}
+        interactive
+        tooltip={'Doover data API base URL, without the /api suffix. Leave empty for https://data.doover.com'}
+      >
         <Input
-          id="config-editor-path"
-          onChange={onPathChange}
-          value={jsonData.path}
-          placeholder="Enter the path, e.g. /api/v1"
+          id="config-editor-base-url"
+          onChange={onJsonDataChange('baseUrl')}
+          value={jsonData.baseUrl}
+          placeholder="https://data.doover.com"
           width={40}
         />
       </InlineField>
-      <InlineField label="API Key" labelWidth={14} interactive tooltip={'Secure json field (backend only)'}>
+      <InlineField
+        label="Organisation ID"
+        labelWidth={20}
+        interactive
+        tooltip={'Doover organisation ID, sent as the X-Doover-Organisation header'}
+      >
+        <Input
+          id="config-editor-org-id"
+          onChange={onJsonDataChange('orgId')}
+          value={jsonData.orgId}
+          placeholder="Organisation snowflake ID"
+          width={40}
+        />
+      </InlineField>
+      <InlineField label="Client ID" labelWidth={20} interactive tooltip={'OAuth2 client ID (client-credentials grant)'}>
+        <Input
+          id="config-editor-client-id"
+          onChange={onJsonDataChange('clientId')}
+          value={jsonData.clientId}
+          placeholder="OAuth2 client ID"
+          width={40}
+        />
+      </InlineField>
+      <InlineField label="Client Secret" labelWidth={20} interactive tooltip={'OAuth2 client secret (stored securely)'}>
         <SecretInput
           required
-          id="config-editor-api-key"
-          isConfigured={secureJsonFields.apiKey}
-          value={secureJsonData?.apiKey}
-          placeholder="Enter your API key"
+          id="config-editor-client-secret"
+          isConfigured={secureJsonFields.clientSecret}
+          value={secureJsonData?.clientSecret}
+          placeholder="OAuth2 client secret"
           width={40}
-          onReset={onResetAPIKey}
-          onChange={onAPIKeyChange}
+          onReset={onResetClientSecret}
+          onChange={onClientSecretChange}
         />
       </InlineField>
     </>
