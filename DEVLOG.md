@@ -20,9 +20,33 @@ smoke test.
   frame/series per agent with an `agent` label, ≤7-day window chunking newest-first
   capped at 5 windows, per-window `next` drain, truncation notices). Timeseries
   queries also emit truncation notices now.
+- **M4 (packaging): prep done; submission deliberately deferred.** User-facing
+  README, plugin.json metadata (description/keywords/links), CHANGELOG, LICENSE
+  copyright filled, all-platform builds (`mage buildAll`), and the official
+  `@grafana/plugin-validator` passes with **zero errors** on the packaged zip.
+  Remaining warnings: screenshots (need real data), unsigned (expected).
+  **Do not submit to the catalog until the smoke-test checklist passes** — the
+  assumptions below have never been validated against live data.
 - Dev Grafana runs at **localhost:3005** (3000/3001 are the local doover-data
   proxies). `docker compose up -d`; creds via `DOOVER_ORG_ID` / `DOOVER_CLIENT_ID`
   / `DOOVER_CLIENT_SECRET` env vars, provisioned against **staging**.
+
+## M4 remaining checklist
+
+Tom's actions:
+- [ ] Confirm LICENSE copyright entity ("Span Engineering (Doover)" — correct?)
+- [ ] Grafana Cloud account for the getdoover org → access policy token → save as
+      `policy_token` repo secret → uncomment signing in
+      `.github/workflows/release.yml`
+- [ ] Make the GitHub repo public (catalog requirement) when ready
+
+Blocked on the smoke test:
+- [ ] Run the checklist below with staging creds; retire/refactor assumptions
+- [ ] Screenshots of real panels (timeseries, stat, fleet table) → plugin.json
+- [ ] Then: tag a release (workflow builds+signs) and submit to the catalog
+      (community signature) — Grafana review typically takes a few weeks
+- [ ] Decide credential-provisioning story for external users (docs or a
+      `doover` CLI helper; backend ask #5 feeds this)
 
 ## Verified so far (without credentials)
 

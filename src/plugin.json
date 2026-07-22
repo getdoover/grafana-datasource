@@ -7,16 +7,21 @@
   "backend": true,
   "executable": "gpx_doover",
   "info": {
-    "description": "",
+    "description": "Query device data from the Doover IoT platform — channel timeseries, current values, and fleet-wide queries across your agents.",
     "author": {
-      "name": "Getdoover"
+      "name": "Doover",
+      "url": "https://doover.com"
     },
-    "keywords": ["datasource"],
+    "keywords": ["datasource", "doover", "iot", "devices", "telemetry", "timeseries"],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "links": [],
+    "links": [
+      { "name": "Website", "url": "https://doover.com" },
+      { "name": "GitHub", "url": "https://github.com/getdoover/grafana-datasource" },
+      { "name": "License", "url": "https://github.com/getdoover/grafana-datasource/blob/main/LICENSE" }
+    ],
     "screenshots": [],
     "version": "%VERSION%",
     "updated": "%TODAY%"

@@ -1,138 +1,89 @@
-# Doover Grafana Datasource
+# Doover data source for Grafana
 
-A Grafana Datasource Plugin For Doover — query agent channel data from `data.doover.com` directly in Grafana dashboards.
+Query device data from the [Doover](https://doover.com) IoT platform directly in
+Grafana — channel history as timeseries, current values for stat panels, and
+fleet-wide queries across many devices at once.
 
-Project plan: see [PLAN.md](./PLAN.md).
+## Features
 
-## What are Grafana data source plugins?
+- **Timeseries** — graph any field of any channel over the dashboard time range,
+  with automatic pagination and server-cache-friendly requests. Dense data is
+  downsampled to the panel resolution with min/max envelopes.
+- **Latest** — the current value of a channel (from its aggregate), stamped with
+  the real last-updated time. Ideal for stat and gauge panels.
+- **Fleet timeseries** — one field across many devices, one series per device.
+- **Fleet latest** — current values across many devices as a table.
+- **Discovery** — channel and field pickers populate from your Doover data;
+  nested values are addressed with dot-joined keys (`battery.voltage`).
+- **Dashboard variables** — populate variables with `channels(<agentId>)` or
+  `fields(<agentId>, <channel>)`, and drive fleet queries with multi-value
+  variables.
+- **Alerting** — backend plugin, so Grafana alert rules work on any query.
 
-Grafana supports a wide range of data sources, including Prometheus, MySQL, and even Datadog. There’s a good chance you can already visualize metrics from the systems you have set up. In some cases, though, you already have an in-house metrics solution that you’d like to add to your Grafana dashboards. Grafana Data Source Plugins enables integrating such solutions with Grafana.
+## Installation
 
-## Getting started
+Install from the Grafana plugin catalog, or download a release from
+[GitHub](https://github.com/getdoover/grafana-datasource/releases) and unzip it
+into your Grafana plugins directory.
 
-### Backend
+## Configuration
 
-1. Update [Grafana plugin SDK for Go](https://grafana.com/developers/plugin-tools/key-concepts/backend-plugins/grafana-plugin-sdk-for-go) dependency to the latest minor version:
+The datasource authenticates with OAuth2 client credentials against the Doover
+data API.
 
-   ```bash
-   go get -u github.com/grafana/grafana-plugin-sdk-go
-   go mod tidy
-   ```
+| Setting | Description |
+|---|---|
+| Base URL | Doover data API base URL. Leave empty for `https://data.doover.com` |
+| Organisation ID | Your Doover organisation ID (sent as `X-Doover-Organisation`) |
+| Client ID / Client Secret | An OAuth2 client-credentials pair for the Doover data API |
 
-2. Build plugin backend binaries for Linux, Windows and Darwin:
+To create an OAuth client, you need the `OAuthClientCreate` permission on the
+target agent — see the Doover documentation, or contact your Doover
+administrator. For dashboards spanning many devices, use a client whose roles
+grant read access across your organisation.
 
-   ```bash
-   mage -v
-   ```
+## Writing queries
 
-3. List all available Mage targets for additional commands:
+1. Pick a **query type** (Timeseries, Latest, Fleet timeseries, Fleet latest).
+2. Enter the **agent ID** (device ID) — or comma-separated IDs / a multi-value
+   variable like `$agent` for fleet queries.
+3. Pick a **channel** (e.g. `tag_values`) and one or more **fields**. Nested
+   values use dot-joined keys: `battery.voltage`.
 
-   ```bash
-   mage -l
-   ```
+### Dashboard variables
 
-### Frontend
+Create a "Query" variable with one of:
 
-1. Install dependencies
+```
+channels(1234567890)          # channel names for an agent
+fields(1234567890, tag_values) # field keys for a channel
+```
 
-   ```bash
-   npm install
-   ```
+Variable references nest: `fields($agent, $channel)`.
 
-2. Build plugin in development mode and run in watch mode
+## Notes and limits
 
-   ```bash
-   npm run dev
-   ```
+- Very wide time ranges on dense channels are truncated (a panel warning shows
+  when this happens) — narrow the range, or let downsampling work at panel
+  resolution.
+- Fleet queries are limited by the Doover API to 500 agents per query, and fleet
+  timeseries supports one field per query.
 
-3. Build plugin in production mode
+## Development
 
-   ```bash
-   npm run build
-   ```
+This is a standard Grafana backend datasource plugin (Go + React). See
+[PLAN.md](https://github.com/getdoover/grafana-datasource/blob/main/PLAN.md) and
+[DEVLOG.md](https://github.com/getdoover/grafana-datasource/blob/main/DEVLOG.md)
+for design notes.
 
-4. Run the tests (using Jest)
+```bash
+npm install
+npm run dev            # frontend, watch mode
+mage -v build:linuxARM64  # backend (or buildAll)
+docker compose up      # dev Grafana on localhost:3005
+go test ./pkg/...      # backend tests
+```
 
-   ```bash
-   # Runs the tests and watches for changes, requires git init first
-   npm run test
-
-   # Exits after running all the tests
-   npm run test:ci
-   ```
-
-5. Spin up a Grafana instance and run the plugin inside it (using Docker)
-
-   ```bash
-   npm run server
-   ```
-
-6. Run the E2E tests (using Playwright)
-
-   ```bash
-   # Spins up a Grafana instance first that we tests against
-   npm run server
-
-   # If you wish to start a certain Grafana version. If not specified will use latest by default
-   GRAFANA_VERSION=11.3.0 npm run server
-
-   # Starts the tests
-   npm run e2e
-   ```
-
-7. Run the linter
-
-   ```bash
-   npm run lint
-
-   # or
-
-   npm run lint:fix
-   ```
-
-# Distributing your plugin
-
-When distributing a Grafana plugin either within the community or privately the plugin must be signed so the Grafana application can verify its authenticity. This can be done with the `@grafana/sign-plugin` package.
-
-_Note: It's not necessary to sign a plugin during development. The docker development environment that is scaffolded with `@grafana/create-plugin` caters for running the plugin without a signature._
-
-## Initial steps
-
-Before signing a plugin please read the Grafana [plugin publishing and signing criteria](https://grafana.com/legal/plugins/#plugin-publishing-and-signing-criteria) documentation carefully.
-
-`@grafana/create-plugin` has added the necessary commands and workflows to make signing and distributing a plugin via the grafana plugins catalog as straightforward as possible.
-
-Before signing a plugin for the first time please consult the Grafana [plugin signature levels](https://grafana.com/legal/plugins/#what-are-the-different-classifications-of-plugins) documentation to understand the differences between the types of signature level.
-
-1. Create a [Grafana Cloud account](https://grafana.com/signup).
-2. Make sure that the first part of the plugin ID matches the slug of your Grafana Cloud account.
-   - _You can find the plugin ID in the `plugin.json` file inside your plugin directory. For example, if your account slug is `acmecorp`, you need to prefix the plugin ID with `acmecorp-`._
-3. Create a Grafana Cloud API key with the `PluginPublisher` role.
-4. Keep a record of this API key as it will be required for signing a plugin
-
-## Signing a plugin
-
-### Using Github actions release workflow
-
-If the plugin is using the github actions supplied with `@grafana/create-plugin` signing a plugin is included out of the box. The [release workflow](./.github/workflows/release.yml) can prepare everything to make submitting your plugin to Grafana as easy as possible. Before being able to sign the plugin however a secret needs adding to the Github repository.
-
-1. Please navigate to "settings > secrets > actions" within your repo to create secrets.
-2. Click "New repository secret"
-3. Name the secret "GRAFANA_API_KEY"
-4. Paste your Grafana Cloud API key in the Secret field
-5. Click "Add secret"
-
-#### Push a version tag
-
-To trigger the workflow we need to push a version tag to github. This can be achieved with the following steps:
-
-1. Run `npm version <major|minor|patch>`
-2. Run `git push origin main --follow-tags`
-
-## Learn more
-
-Below you can find source code for existing app plugins and other related documentation.
-
-- [Basic data source plugin example](https://github.com/grafana/grafana-plugin-examples/tree/master/examples/datasource-basic#readme)
-- [`plugin.json` documentation](https://grafana.com/developers/plugin-tools/reference/plugin-json)
-- [How to sign a plugin?](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin)
+The dev Grafana provisions a datasource against Doover staging using the
+`DOOVER_ORG_ID`, `DOOVER_CLIENT_ID` and `DOOVER_CLIENT_SECRET` environment
+variables.
